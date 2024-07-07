@@ -188,11 +188,19 @@ static inline bool arch_memory_deny_write_exec_supported(void)
  *
  *	d)	mmap(PROT_READ | PROT_EXEC)
  *		mmap(PROT_READ | PROT_EXEC | PROT_BTI)
+ *
+ * If OpenPaX is enabled, it will be assumed that we want to deny PROT_WRITE | PROT_EXEC
+ * by default, unless the MPROTECT feature bit is disabled on a binary.
  */
 static inline bool map_deny_write_exec(struct vm_area_struct *vma,  unsigned long vm_flags)
 {
-	if (!test_bit(MMF_HAS_MDWE, &current->mm->flags))
+	if (
+#ifdef CONFIG_OPENPAX_MPROTECT
+	    !test_bit(PAXF_MPROTECT, &current->mm->pax_flags) &&
+#endif
+	    !test_bit(MMF_HAS_MDWE, &current->mm->flags)) {
 		return false;
+	}
 
 	if ((vm_flags & VM_EXEC) && (vm_flags & VM_WRITE))
 		return true;
