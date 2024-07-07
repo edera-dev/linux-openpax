@@ -424,6 +424,22 @@ __vfs_getxattr(struct dentry *dentry, struct inode *inode, const char *name,
 }
 EXPORT_SYMBOL(__vfs_getxattr);
 
+#ifdef CONFIG_OPENPAX_XATTR_PAX_FLAGS
+ssize_t
+pax_getxattr(struct file *file, void *value, size_t size)
+{
+	struct inode *inode = file->f_path.dentry->d_inode;
+	ssize_t error;
+
+	error = inode_permission(file_mnt_idmap(file), inode, MAY_EXEC);
+	if (error)
+		return error;
+
+	return __vfs_getxattr(file->f_path.dentry, inode, XATTR_NAME_USER_PAX_FLAGS, value, size);
+}
+EXPORT_SYMBOL(pax_getxattr);
+#endif
+
 ssize_t
 vfs_getxattr(struct mnt_idmap *idmap, struct dentry *dentry,
 	     const char *name, void *value, size_t size)
