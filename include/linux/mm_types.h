@@ -933,6 +933,9 @@ struct mm_struct {
 		mm_context_t context;
 
 		unsigned long flags; /* Must use atomic bitops to access */
+#ifdef CONFIG_OPENPAX
+		unsigned long pax_flags;
+#endif
 
 #ifdef CONFIG_AIO
 		spinlock_t			ioctx_lock;
