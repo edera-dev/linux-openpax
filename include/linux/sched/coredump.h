@@ -107,4 +107,12 @@ static inline unsigned long mmf_init_flags(unsigned long flags)
 	return flags & MMF_INIT_MASK;
 }
 
+#ifdef CONFIG_OPENPAX
+#define PAXF_PAGEEXEC		1
+#define PAXF_EMUTRAMP		2
+#define PAXF_MPROTECT		3
+#define PAXF_RANDMMAP		4
+#define PAXF_SEGMEXEC		5
+#endif
+
 #endif /* _LINUX_SCHED_COREDUMP_H */
