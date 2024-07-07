@@ -973,6 +973,9 @@ struct mm_struct {
 		mm_context_t context;
 
 		unsigned long flags; /* Must use atomic bitops to access */
+#ifdef CONFIG_OPENPAX
+		unsigned long pax_flags;
+#endif
 
 #ifdef CONFIG_AIO
 		spinlock_t			ioctx_lock;
@@ -1655,5 +1658,13 @@ static inline unsigned long mmf_init_flags(unsigned long flags)
 			   (1UL << MMF_HAS_MDWE_NO_INHERIT));
 	return flags & MMF_INIT_MASK;
 }
+
+#ifdef CONFIG_OPENPAX
+#define PAXF_PAGEEXEC		1
+#define PAXF_EMUTRAMP		2
+#define PAXF_MPROTECT		3
+#define PAXF_RANDMMAP		4
+#define PAXF_SEGMEXEC		5
+#endif
 
 #endif /* _LINUX_MM_TYPES_H */
