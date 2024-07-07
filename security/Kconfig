@@ -279,6 +279,7 @@ config LSM
 	  If unsure, leave this as the default.
 
 source "security/Kconfig.hardening"
+source "security/Kconfig.openpax"
 
 endmenu
 

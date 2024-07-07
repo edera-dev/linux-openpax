@@ -1,0 +1,46 @@
+#
+# OpenPaX configuration
+#
+
+menu "OpenPaX options"
+
+config OPENPAX
+	bool "Enable OpenPaX features"
+	default y
+	help
+	  This configuration setting enables OpenPaX features.
+	  OpenPaX adds memory safety-related defenses to the kernel which
+	  reduce the risks posed by exploitable memory safety bugs.
+
+config OPENPAX_XATTR_PAX_FLAGS
+	bool "Use filesystem extended attributes to modify OpenPaX features"
+	depends on OPENPAX
+	default y
+	help
+	  Enabling this option will allow you to control whether
+	  OpenPaX features are enabled on a per-executable basis via
+	  xattr attributes.
+	
+	  For compatibility with the original PaX patch, the feature
+	  flags are read from the user.pax.flags extended attribute.
+	
+	  If you disable this feature, then all applications will run
+	  with OpenPaX enabled by default.
+
+config OPENPAX_MPROTECT
+	bool "Enforce W^X for memory mappings"
+	depends on OPENPAX
+	default y
+	help
+	  Enabling this option prevents programs from making pages
+	  executable when they are also writable.  In addition, it
+	  also denies transition of writable mappings to executable
+	  mappings.
+	
+	  This feature is known to break programs which depend on
+	  just-in-time (JIT) compilation.  It is advisable to enable
+	  this feature system-wide, but mark programs which have
+	  JIT compilation appropriately so the W^X enforcement is
+	  disabled for them.
+
+endmenu
