@@ -21,6 +21,7 @@
 
 struct inode;
 struct dentry;
+struct file;
 
 static inline bool is_posix_acl_xattr(const char *name)
 {
@@ -71,6 +72,9 @@ struct xattr {
 	size_t value_len;
 };
 
+#ifdef CONFIG_OPENPAX_XATTR_PAX_FLAGS
+ssize_t pax_getxattr(struct file *, void *, size_t);
+#endif
 ssize_t __vfs_getxattr(struct dentry *, struct inode *, const char *, void *, size_t);
 ssize_t vfs_getxattr(struct mnt_idmap *, struct dentry *, const char *,
 		     void *, size_t);
