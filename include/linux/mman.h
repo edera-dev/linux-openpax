@@ -197,12 +197,21 @@ static inline bool arch_memory_deny_write_exec_supported(void)
  * we propose to set.
  *
  * Return: false if proposed change is OK, true if not ok and should be denied.
+ *
+ * Note: If OpenPaX is enabled, it will be assumed that we want to deny
+ * PROT_WRITE | PROT_EXEC by default, unless the MPROTECT feature bit is
+ * disabled on a binary.
  */
 static inline bool map_deny_write_exec(unsigned long old, unsigned long new)
 {
 	/* If MDWE is disabled, we have nothing to deny. */
-	if (!test_bit(MMF_HAS_MDWE, &current->mm->flags))
+	if (
+#ifdef CONFIG_OPENPAX_MPROTECT
+	    !test_bit(PAXF_MPROTECT, &current->mm->pax_flags) &&
+#endif
+	    !test_bit(MMF_HAS_MDWE, &current->mm->flags)) {
 		return false;
+	}
 
 	/* If the new VMA is not executable, we have nothing to deny. */
 	if (!(new & VM_EXEC))
