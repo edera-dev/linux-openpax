@@ -4414,6 +4414,9 @@
 			the specified number of seconds.  This is to be used if
 			your oopses keep scrolling off the screen.
 
+	pax_softmode=<int>
+			Enables OpenPaX soft mode if set to a non-zero value.
+
 	pcbit=		[HW,ISDN]
 
 	pci=option[,option...]	[PCI,EARLY] various PCI subsystem options.
