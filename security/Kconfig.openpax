@@ -12,6 +12,18 @@ config OPENPAX
 	  OpenPaX adds memory safety-related defenses to the kernel which
 	  reduce the risks posed by exploitable memory safety bugs.
 
+config OPENPAX_SOFTMODE
+	bool "Support PaX soft mode"
+	default y
+	help
+	  Enabling this option will allow you to configure OpenPaX
+	  features to run in soft mode.  In this mode, OpenPaX features
+	  will be disabled by default, only running on applications
+	  which explicitly enable them.
+	
+	  Soft mode can be enabled via the kernel.pax.softmode sysctl,
+	  or the pax_softmode=1 kernel command-line option.
+
 config OPENPAX_XATTR_PAX_FLAGS
 	bool "Use filesystem extended attributes to modify OpenPaX features"
 	depends on OPENPAX
