@@ -860,9 +860,11 @@ static int openpax_set_flags(struct file * const file)
 #endif
 	current->mm->pax_flags = 0;
 
-	set_bit(PAXF_PAGEEXEC, &current->mm->pax_flags);
-	set_bit(PAXF_MPROTECT, &current->mm->pax_flags);
-	set_bit(PAXF_RANDMMAP, &current->mm->pax_flags);
+	if (!pax_softmode) {
+		set_bit(PAXF_PAGEEXEC, &current->mm->pax_flags);
+		set_bit(PAXF_MPROTECT, &current->mm->pax_flags);
+		set_bit(PAXF_RANDMMAP, &current->mm->pax_flags);
+	}
 
 #ifdef CONFIG_OPENPAX_XATTR_PAX_FLAGS
 	error = openpax_parse_xattr_flags(file);
