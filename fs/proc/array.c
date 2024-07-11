@@ -436,6 +436,18 @@ __weak void arch_proc_pid_thread_features(struct seq_file *m,
 {
 }
 
+#ifdef CONFIG_OPENPAX
+static inline void task_pax(struct seq_file *m, struct mm_struct *mm)
+{
+	seq_printf(m, "PaX:\t%c%c%c%c%c\n",
+		   test_bit(PAXF_PAGEEXEC, &mm->pax_flags) ? 'P' : 'p',
+		   test_bit(PAXF_EMUTRAMP, &mm->pax_flags) ? 'E' : 'e',
+		   test_bit(PAXF_MPROTECT, &mm->pax_flags) ? 'M' : 'm',
+		   test_bit(PAXF_RANDMMAP, &mm->pax_flags) ? 'R' : 'r',
+		   test_bit(PAXF_SEGMEXEC, &mm->pax_flags) ? 'S' : 's');
+}
+#endif
+
 int proc_pid_status(struct seq_file *m, struct pid_namespace *ns,
 			struct pid *pid, struct task_struct *task)
 {
@@ -452,6 +464,9 @@ int proc_pid_status(struct seq_file *m, struct pid_namespace *ns,
 		task_core_dumping(m, task);
 		task_thp_status(m, mm);
 		task_untag_mask(m, mm);
+#ifdef CONFIG_OPENPAX
+		task_pax(m, mm);
+#endif
 		mmput(mm);
 	}
 	task_sig(m, task);
