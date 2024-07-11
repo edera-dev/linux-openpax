@@ -1077,7 +1077,7 @@ out_free_interp:
 			current->personality |= READ_IMPLIES_EXEC;
 	}
 
-	if (!(current->personality & ADDR_NO_RANDOMIZE) && randomize_va_space)
+	if (!(current->personality & ADDR_NO_RANDOMIZE) && test_bit(PAXF_RANDMMAP, &current->mm->pax_flags))
 		current->flags |= PF_RANDOMIZE;
 
 	setup_new_exec(bprm);
