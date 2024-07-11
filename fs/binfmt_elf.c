@@ -1068,6 +1068,9 @@ out_free_interp:
 	retval = openpax_set_flags(bprm->file);
 	if (retval)
 		goto out_free_dentry;
+
+	if (!test_bit(PAXF_EMUTRAMP, &current->mm->pax_flags))
+		executable_stack = EXSTACK_DISABLE_X;
 #endif
 
 	if (elf_read_implies_exec(*elf_ex, executable_stack)) {
