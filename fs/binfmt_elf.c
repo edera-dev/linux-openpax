@@ -1081,7 +1081,11 @@ out_free_interp:
 	}
 
 	const int snapshot_randomize_va_space = READ_ONCE(randomize_va_space);
-	if (!(current->personality & ADDR_NO_RANDOMIZE) && test_bit(PAXF_RANDMMAP, &current->mm->pax_flags))
+	if (!(current->personality & ADDR_NO_RANDOMIZE) && snapshot_randomize_va_space
+#ifdef CONFIG_OPENPAX
+	    && test_bit(PAXF_RANDMMAP, &current->mm->pax_flags)
+#endif
+	    )
 		current->flags |= PF_RANDOMIZE;
 
 	setup_new_exec(bprm);
