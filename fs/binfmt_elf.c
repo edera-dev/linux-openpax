@@ -1069,16 +1069,14 @@ out_free_interp:
 	if (retval)
 		goto out_free_dentry;
 
-	if (!test_bit(PAXF_EMUTRAMP, &current->mm->pax_flags))
+	if (test_bit(PAXF_PAGEEXEC, &current->mm->pax_flags) || test_bit(PAXF_SEGMEXEC, &current->mm->pax_flags)) {
 		executable_stack = EXSTACK_DISABLE_X;
+		current->personality &= ~READ_IMPLIES_EXEC;
+	} else
 #endif
 
-	if (elf_read_implies_exec(*elf_ex, executable_stack)) {
-#ifdef CONFIG_OPENPAX
-		if (!test_bit(PAXF_MPROTECT, &current->mm->pax_flags))
-#endif
-			current->personality |= READ_IMPLIES_EXEC;
-	}
+	if (elf_read_implies_exec(*elf_ex, executable_stack))
+		current->personality |= READ_IMPLIES_EXEC;
 
 	const int snapshot_randomize_va_space = READ_ONCE(randomize_va_space);
 	if (!(current->personality & ADDR_NO_RANDOMIZE) && snapshot_randomize_va_space
