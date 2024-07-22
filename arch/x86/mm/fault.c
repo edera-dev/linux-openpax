@@ -1534,6 +1534,13 @@ void do_user_addr_fault(struct pt_regs *regs,
 	}
 #endif
 
+#ifdef CONFIG_OPENPAX_EMUTRAMP
+	if (openpax_fault_is_trampoline(error_code, regs, address)) {
+		if (openpax_emulate_trampoline(regs))
+			return;
+	}
+#endif
+
 	if (!(flags & FAULT_FLAG_USER))
 		goto lock_mmap;
 
