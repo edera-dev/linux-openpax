@@ -72,4 +72,18 @@ config OPENPAX_EMUTRAMP
 	
 	  Most likely, you should say 'y' here.
 
+config OPENPAX_EMUTRAMP_DEFAULT
+	bool "Enable trampoline emulation by default"
+	depends on OPENPAX_EMUTRAMP
+	default y
+	help
+	  Enabling this option allows programs which require
+	  trampolines to be emulated to continue working by default.
+
+	  Otherwise, the emulation flag must be enabled in a binary's
+	  PaX marking, e.g. with paxmark -E <binary>.
+
+	  If you do not say 'y' here, you will have to manually mark
+	  all programs which require trampoline emulation.
+
 endmenu
