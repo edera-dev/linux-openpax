@@ -1230,6 +1230,184 @@ bool openpax_fault_is_trampoline(unsigned long error_code,
 	return false;
 }
 NOKPROBE_SYMBOL(openpax_fault_is_trampoline);
+
+static inline
+bool openpax_emulate_trampoline_32(struct pt_regs *regs)
+{
+	int err;
+
+	/* libffi trampoline type 1, gcc trampoline type 2 */
+	do {
+		unsigned char mov, jmp;
+		unsigned int addr1, addr2;
+
+#ifdef CONFIG_X86_64
+		if ((regs->ip + 9) >> 32)
+			break;
+#endif
+
+		err = get_user(mov, (unsigned char __user *) regs->ip);
+		err |= get_user(addr1, (unsigned int __user *) (regs->ip + 1));
+		err |= get_user(jmp, (unsigned char __user *) (regs->ip + 5));
+		err |= get_user(addr2, (unsigned int __user *) (regs->ip + 6));
+
+		if (err)
+			break;
+
+		if ((mov == 0xB8 || mov == 0xB9) && jmp == 0xE9) {
+			if (mov == 0xB8)
+				regs->ax = addr1;
+			else
+				regs->cx = addr1;
+
+			regs->ip = (unsigned int)(regs->ip + addr2 + 10);
+			return true;
+		}
+	} while (0);
+
+	/* older gcc trampoline type... */
+	do {
+		unsigned char mov1, mov2;
+		unsigned short jmp;
+		unsigned int addr1, addr2;
+
+#ifdef CONFIG_X86_64
+		if ((regs->ip + 11) >> 32)
+			break;
+#endif
+
+		err = get_user(mov1, (unsigned char __user *) regs->ip);
+		err |= get_user(addr1, (unsigned int __user *) (regs->ip + 1));
+		err |= get_user(mov2, (unsigned char __user *) (regs->ip + 5));
+		err |= get_user(addr2, (unsigned int __user *) (regs->ip + 6));
+		err |= get_user(jmp, (unsigned short __user *) (regs->ip + 10));
+
+		if (err)
+			break;
+
+		if (mov1 == 0xB9 && mov2 == 0xB8 && jmp == 0xE0FF) {
+			regs->cx = addr1;
+			regs->ax = addr2;
+			regs->ip = addr2;
+			return true;
+		}
+	} while (0);
+
+	return false;
+}
+NOKPROBE_SYMBOL(openpax_emulate_trampoline_32);
+
+#ifdef CONFIG_X86_64
+static inline
+bool openpax_emulate_trampoline_64(struct pt_regs *regs)
+{
+	int err;
+
+	/* libffi trampoline type 1 */
+	do {
+		unsigned short mov1, mov2, jmp1;
+		unsigned char stcclc, jmp2;
+		unsigned long addr1, addr2;
+
+		err = get_user(mov1, (unsigned short __user *) regs->ip);
+		err |= get_user(addr1, (unsigned long __user *) (regs->ip + 2));
+		err |= get_user(mov2, (unsigned short __user *) (regs->ip + 10));
+		err |= get_user(addr2, (unsigned long __user *) (regs->ip + 12));
+		err |= get_user(stcclc, (unsigned char __user *) (regs->ip + 20));
+		err |= get_user(jmp1, (unsigned short __user *) (regs->ip + 21));
+		err |= get_user(jmp2, (unsigned char __user *) (regs->ip + 23));
+
+		if (err)
+			break;
+
+		if (mov1 == 0xBB49 && mov2 == 0xBA49 && (stcclc == 0xF8 || stcclc == 0xF9) && jmp1 == 0xFF49 && jmp2 == 0xE3) {
+			regs->r11 = addr1;
+			regs->r10 = addr2;
+
+			if (stcclc == 0xF8)
+				regs->flags &= ~X86_EFLAGS_CF;
+			else
+				regs->flags |= X86_EFLAGS_CF;
+
+			regs->ip = addr1;
+			return true;
+		}
+	} while (0);
+
+	/* gcc trampoline type 1 */
+	do {
+		unsigned short mov1, mov2, jmp1;
+		unsigned char jmp2;
+		unsigned int addr1;
+		unsigned long addr2;
+
+		err = get_user(mov1, (unsigned short __user *) regs->ip);
+		err |= get_user(addr1, (unsigned int __user *) (regs->ip + 2));
+		err |= get_user(mov2, (unsigned short __user *) (regs->ip + 6));
+		err |= get_user(addr2, (unsigned long __user *) (regs->ip + 8));
+		err |= get_user(jmp1, (unsigned short __user *) (regs->ip + 16));
+		err |= get_user(jmp2, (unsigned char __user *) (regs->ip + 18));
+
+		if (err)
+			break;
+
+		if (mov1 == 0xBB41 && mov2 == 0xBA49 && jmp1 == 0xFF49 && jmp2 == 0xE3) {
+			regs->r11 = addr1;
+			regs->r10 = addr2;
+			regs->ip = addr1;
+			return true;
+		}
+	} while (0);
+
+	/* gcc trampoline type 2 */
+	do {
+		unsigned short mov1, mov2, jmp1;
+		unsigned char jmp2;
+		unsigned long addr1, addr2;
+
+		err = get_user(mov1, (unsigned short __user *) regs->ip);
+		err |= get_user(addr1, (unsigned long __user *) (regs->ip + 2));
+		err |= get_user(mov2, (unsigned short __user *) (regs->ip + 10));
+		err |= get_user(addr2, (unsigned long __user *) (regs->ip + 12));
+		err |= get_user(jmp1, (unsigned short __user *) (regs->ip + 20));
+		err |= get_user(jmp2, (unsigned char __user *) (regs->ip + 22));
+
+		if (err)
+			break;
+
+		if (mov1 == 0xBB49 && mov2 == 0xBA49 && jmp1 == 0xFF49 && jmp2 == 0xE3) {
+			regs->r11 = addr1;
+			regs->r10 = addr2;
+			regs->ip = addr1;
+			return true;
+		}
+	} while (0);
+
+	return false;
+}
+NOKPROBE_SYMBOL(openpax_emulate_trampoline_64);
+#endif
+
+/*
+ * Emulate a trampoline.  Returns false if emulation failed, meaning
+ * that the task should be killed.
+ */
+static inline
+bool openpax_emulate_trampoline(struct pt_regs *regs)
+{
+	if (v8086_mode(regs))
+		return false;
+
+	if (regs->cs == __USER32_CS || (regs->cs & SEGMENT_LDT))
+		return openpax_emulate_trampoline_32(regs);
+#ifdef CONFIG_X86_64
+	else
+		return openpax_emulate_trampoline_64(regs);
+#endif
+
+	return false;
+}
+NOKPROBE_SYMBOL(openpax_emulate_trampoline);
 #endif
 
 /*
