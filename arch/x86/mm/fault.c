@@ -1199,6 +1199,39 @@ do_kern_addr_fault(struct pt_regs *regs, unsigned long hw_error_code,
 }
 NOKPROBE_SYMBOL(do_kern_addr_fault);
 
+#ifdef CONFIG_OPENPAX_EMUTRAMP
+/*
+ * Determine if a fault is possibly caused by an emulatable stack or
+ * heap trampoline.  We return false if trampoline emulation is not
+ * enabled.
+ */
+static inline
+bool openpax_fault_is_trampoline(unsigned long error_code,
+				 struct pt_regs *regs,
+				 unsigned long address)
+{
+	struct mm_struct *mm = current->mm;
+	unsigned long ip = regs->ip;
+
+	if (!test_bit(PAXF_EMUTRAMP, &mm->pax_flags))
+		return false;
+
+	if (v8086_mode(regs))
+		ip = ((regs->cs & 0xffff) << 4) + (ip & 0xffff);
+
+	if (test_bit(PAXF_PAGEEXEC, &mm->pax_flags)) {
+		if ((__supported_pte_mask & _PAGE_NX) && (error_code & X86_PF_INSTR))
+			return true;
+		if (!(error_code & (X86_PF_PROT | X86_PF_WRITE)) && ip == address)
+			return true;
+		return false;
+	}
+
+	return false;
+}
+NOKPROBE_SYMBOL(openpax_fault_is_trampoline);
+#endif
+
 /*
  * Handle faults in the user portion of the address space.  Nothing in here
  * should check X86_PF_USER without a specific justification: for almost
