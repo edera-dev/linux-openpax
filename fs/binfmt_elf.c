@@ -853,14 +853,14 @@ static int openpax_parse_xattr_flags(struct file * const file)
 }
 #endif
 
-static int openpax_set_flags(struct file * const file)
+static int openpax_set_flags(struct file * const file, const int snapshot_randomize_va_space)
 {
 #ifdef CONFIG_OPENPAX_XATTR_PAX_FLAGS
 	int error;
 #endif
 	current->mm->pax_flags = 0;
 
-	if (randomize_va_space) {
+	if (snapshot_randomize_va_space) {
 		set_bit(PAXF_RANDMMAP, &current->mm->pax_flags);
 	}
 
@@ -1068,8 +1068,10 @@ out_free_interp:
 	   may depend on the personality.  */
 	SET_PERSONALITY2(*elf_ex, &arch_state);
 
+	const int snapshot_randomize_va_space = READ_ONCE(randomize_va_space);
+
 #ifdef CONFIG_OPENPAX
-	retval = openpax_set_flags(bprm->file);
+	retval = openpax_set_flags(bprm->file, snapshot_randomize_va_space);
 	if (retval)
 		goto out_free_dentry;
 
@@ -1082,7 +1084,6 @@ out_free_interp:
 	if (elf_read_implies_exec(*elf_ex, executable_stack))
 		current->personality |= READ_IMPLIES_EXEC;
 
-	const int snapshot_randomize_va_space = READ_ONCE(randomize_va_space);
 	if (!(current->personality & ADDR_NO_RANDOMIZE) && snapshot_randomize_va_space
 #ifdef CONFIG_OPENPAX
 	    && test_bit(PAXF_RANDMMAP, &current->mm->pax_flags)
